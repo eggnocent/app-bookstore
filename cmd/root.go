@@ -2,11 +2,12 @@ package cmd
 
 import (
 	"app-bookstore/config"
+	"app-bookstore/database/seeder"
+	v1 "app-bookstore/delivery/v1"
 	"app-bookstore/lib"
+	"app-bookstore/router"
 	"net/http"
 	"os"
-
-	"app-bookstore/database/seeder"
 
 	"github.com/gorilla/mux"
 	"github.com/jmoiron/sqlx"
@@ -33,7 +34,7 @@ func Execute() {
 }
 
 func init() {
-	cobra.OnInitialize(initConfig, initLogger, initDatabase, initJWT)
+	cobra.OnInitialize(initConfig, initLogger, initJWT, initDatabase)
 }
 
 func initConfig() {
@@ -63,9 +64,11 @@ func initDatabase() {
 
 	dbPool = db.DB
 
-	seeder.SeedUsers(dbPool)
+	seeder.SeedSuperAdmin(dbPool)
 
-	log.Info().Msg("Database connect successfullly...")
+	router.Init(dbPool, jwtService)
+
+	log.Info().Msg("Database connect successfully...")
 }
 
 func initJWT() {
@@ -76,10 +79,9 @@ func startServer(cmd *cobra.Command, args []string) {
 	r := mux.NewRouter()
 
 	log.Info().Msg("Starting server...")
-	r.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("Welcome to the Home Page!"))
-	}).Methods("GET")
+	apiV1 := r.PathPrefix("/api/v1").Subrouter()
+
+	v1.NewAPIUser(apiV1)
 
 	log.Info().Msgf("Server running on port %s", cfg.App.AppPort)
 	if err := http.ListenAndServe(":"+cfg.App.AppPort, r); err != nil {

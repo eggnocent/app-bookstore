@@ -9,24 +9,28 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
-func SeedUsers(db *sqlx.DB) {
-	pass, err := lib.HashPassword("admin123")
+// SeedSuperAdmin inserts only one Super Admin user.
+func SeedSuperAdmin(db *sqlx.DB) {
+	// Hash the password for Super Admin
+	hashedPassword, err := lib.HashPassword("SuperAdmin123!")
 	if err != nil {
-		log.Fatal("Error hashing this password", err)
+		log.Fatalf("Error hashing Super Admin password: %v", err)
 	}
 
+	// Generate Super Admin ID
+	superAdminID := uuid.New()
+
+	// Insert Super Admin user
 	query := `
-    INSERT INTO users (id, username, password, role, created_at, created_by, updated_at, updated_by)
-    VALUES ($1, $2, $3, $4, NOW(), $5, NOW(), $5)
-    ON CONFLICT (username) DO NOTHING;
-    `
+		INSERT INTO users (id, username, password, created_at, created_by, updated_at, updated_by)
+		VALUES ($1, $2, $3, NOW(), $4, NOW(), $4)
+		ON CONFLICT (username) DO NOTHING;
+	`
 
-	adminID := uuid.New().String()
-
-	_, err = db.ExecContext(context.Background(), query, adminID, "admin", pass, "admin", adminID)
+	_, err = db.ExecContext(context.Background(), query, superAdminID, "superadmin", hashedPassword, superAdminID)
 	if err != nil {
-		log.Fatalf("Error seeding users: %v", err)
+		log.Fatalf("Error inserting Super Admin: %v", err)
 	} else {
-		log.Println("Users seeded successfully")
+		log.Println("Super Admin user inserted successfully.")
 	}
 }
