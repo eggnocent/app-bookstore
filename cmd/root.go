@@ -82,6 +82,7 @@ func startServer(cmd *cobra.Command, args []string) {
 	apiV1 := r.PathPrefix("/api/v1").Subrouter()
 
 	v1.NewAPIUser(apiV1)
+	v1.NewAPIRole(apiV1)
 
 	log.Info().Msgf("Server running on port %s", cfg.App.AppPort)
 	if err := http.ListenAndServe(":"+cfg.App.AppPort, r); err != nil {
