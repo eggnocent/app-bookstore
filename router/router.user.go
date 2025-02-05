@@ -6,6 +6,18 @@ import (
 	"net/http"
 )
 
+func HandlerUser(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	userResponse, err := userService.List(ctx)
+	if err != nil {
+		lib.Error(w, http.StatusBadRequest, "failed to retreive user", err)
+		return
+	}
+
+	lib.Success(w, "success to retreive user", userResponse)
+}
+
 func HandlerRegisterUser(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 

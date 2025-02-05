@@ -42,6 +42,31 @@ func (u *UserModel) Response() UserResponse {
 	}
 }
 
+func GetAllUser(ctx context.Context, db *sqlx.DB) ([]UserModel, error) {
+	query := `
+		SELECT id, username, created_at, created_by, updated_at, updated_by 
+		FROM users
+	`
+	rows, err := db.QueryxContext(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+
+	defer rows.Close()
+
+	var users []UserModel
+	for rows.Next() {
+		var user UserModel
+		err := rows.StructScan(&user)
+		if err != nil {
+			return nil, err
+		}
+
+		users = append(users, user)
+	}
+	return users, err
+}
+
 func GetUserByUsername(ctx context.Context, db *sqlx.DB, username string) (*UserModel, error) {
 	var user UserModel
 	query := `

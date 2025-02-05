@@ -44,6 +44,19 @@ type LoginResponse struct {
 	ExpiresAt   int64  `json:"expires_at"`
 }
 
+func (u *UserModule) List(ctx context.Context) ([]model.UserResponse, error) {
+	users, err := model.GetAllUser(ctx, u.db)
+	if err != nil {
+		return nil, err
+	}
+
+	var response []model.UserResponse
+	for _, user := range users {
+		response = append(response, user.Response())
+	}
+	return response, nil
+}
+
 func (u *UserModule) Register(ctx context.Context, param UserParam) (interface{}, error) {
 	hashPassword, err := lib.HashPassword(param.Password)
 	if err != nil {
