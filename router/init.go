@@ -8,11 +8,15 @@ import (
 )
 
 var (
-	userService *api.UserModule
-	roleService *api.RoleModule
+	userService        *api.UserModule
+	roleService        *api.RoleModule
+	userRequestService *api.UserRequestModule
+	userRolesService   *api.UserRoleModule
 )
 
 func Init(db *sqlx.DB, jwt lib.Jwt) {
 	userService = api.NewUserModule(db, jwt)
 	roleService = api.NewRoleModule(db, jwt)
+	userRequestService = api.NewUserRequestModule(db, jwt)
+	userRolesService = api.NewUserRolesModule(db, jwt)
 }
