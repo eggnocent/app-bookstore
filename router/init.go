@@ -12,6 +12,7 @@ var (
 	roleService        *api.RoleModule
 	userRequestService *api.UserRequestModule
 	userRolesService   *api.UserRoleModule
+	resourceService    *api.ResourceModule
 )
 
 func Init(db *sqlx.DB, jwt lib.Jwt) {
@@ -19,4 +20,5 @@ func Init(db *sqlx.DB, jwt lib.Jwt) {
 	roleService = api.NewRoleModule(db, jwt)
 	userRequestService = api.NewUserRequestModule(db, jwt)
 	userRolesService = api.NewUserRolesModule(db, jwt)
+	resourceService = api.NewResourceModule(db, jwt)
 }
