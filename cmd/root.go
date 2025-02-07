@@ -4,6 +4,7 @@ import (
 	"app-bookstore/config"
 	"app-bookstore/database/seeder"
 	v1 "app-bookstore/delivery/v1"
+	"app-bookstore/helper"
 	"app-bookstore/lib"
 	"app-bookstore/router"
 	"net/http"
@@ -79,14 +80,19 @@ func startServer(cmd *cobra.Command, args []string) {
 	r := mux.NewRouter()
 
 	log.Info().Msg("Starting server...")
-	apiV1 := r.PathPrefix("/api/v1").Subrouter()
+	mw := helper.NewMiddleware(jwtService, dbPool)
 
-	v1.NewAPIUser(apiV1)
-	v1.NewAPIRole(apiV1)
-	v1.NewAPIUserRequest(apiV1)
-	v1.NewAPIUserRoles(apiV1)
-	v1.NewAPIResource(apiV1)
-	v1.NewAPIRoleResource(apiV1)
+	public := r.PathPrefix("/api/v1").Subrouter()
+	v1.NewAPIUser(public)
+
+	protected := r.PathPrefix("/api/v1").Subrouter()
+	protected.Use(mw.CheckAccess)
+
+	v1.NewAPIRole(protected)
+	v1.NewAPIUserRequest(protected)
+	v1.NewAPIUserRoles(protected)
+	v1.NewAPIResource(public)
+	v1.NewAPIRoleResource(protected)
 
 	log.Info().Msgf("Server running on port %s", cfg.App.AppPort)
 	if err := http.ListenAndServe(":"+cfg.App.AppPort, r); err != nil {

@@ -5,7 +5,6 @@ import (
 	"app-bookstore/model"
 	"context"
 	"errors"
-	"log"
 	"time"
 
 	"github.com/google/uuid"
@@ -80,14 +79,13 @@ func (u *UserModule) Register(ctx context.Context, param UserParam) (interface{}
 }
 
 func (u *UserModule) Login(ctx context.Context, param UserParam) (*LoginResponse, error) {
+	// validasi user
 	user, err := model.GetUserByUsername(ctx, u.db, param.Username)
 	if err != nil {
 		return nil, errors.New("invalid username or password")
 	}
 
-	log.Println(param.Username)
-	log.Println(param.Password)
-
+	// validasi pass
 	if !lib.CheckPassword(param.Password, user.Password) {
 		return nil, errors.New("invalid password")
 	}
@@ -141,5 +139,12 @@ func (u *UserModule) ChangePassword(ctx context.Context, token string, param Cha
 		return errors.New("failed to change password")
 	}
 
+	return nil
+}
+
+func (u *UserModule) Logout(ctx context.Context, token string) error {
+	if token == "" {
+		return errors.New("token is invalid")
+	}
 	return nil
 }

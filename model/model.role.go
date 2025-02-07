@@ -2,6 +2,8 @@ package model
 
 import (
 	"context"
+	"database/sql"
+	"fmt"
 	"time"
 
 	"github.com/google/uuid"
@@ -84,6 +86,36 @@ func GetOneRole(ctx context.Context, db *sqlx.DB, id uuid.UUID) (RoleModel, erro
 	return role, nil
 }
 
+func GetUserRoleID(ctx context.Context, db *sqlx.DB, userID uuid.UUID) (uuid.UUID, error) {
+	query := `
+		SELECT 
+			role_id
+		FROM
+			user_roles
+		WHERE user_id = $1
+		LIMIT 1
+	`
+
+	var roleID uuid.UUID
+	err := db.QueryRowxContext(ctx, query,
+		userID,
+	).Scan(
+		&roleID,
+	)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			fmt.Printf("Error: user %s tidak memiliki role di db\n", userID)
+			return uuid.Nil, fmt.Errorf("user does not have an assigned role")
+		}
+
+		fmt.Printf("Error: Query gagal di GetUserRoleID() - %v\n", err)
+		return uuid.Nil, err
+	}
+
+	fmt.Printf("Error: User %s memiliki role %s\n", userID, roleID)
+	return roleID, nil
+}
+
 func (r *RoleModel) Insert(ctx context.Context, db *sqlx.DB) error {
 	query := `
 		INSERT INTO roles (
@@ -120,6 +152,8 @@ func (r *RoleModel) Update(ctx context.Context, db *sqlx.DB) error {
 			description = $2,
 			updated_at = $3,
 			updated_by = $4
+		WHERE 
+			id = $5
 	`
 
 	_, err := db.ExecContext(ctx, query,
@@ -127,6 +161,7 @@ func (r *RoleModel) Update(ctx context.Context, db *sqlx.DB) error {
 		r.Description,
 		r.UpdatedAt.Time,
 		r.UpdatedBy.UUID,
+		r.ID,
 	)
 
 	if err != nil {

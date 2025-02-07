@@ -5,7 +5,6 @@ import (
 	"app-bookstore/model"
 	"context"
 	"errors"
-	"fmt"
 	"time"
 
 	"github.com/google/uuid"
@@ -88,14 +87,10 @@ func (ur *UserRequestModule) CreateUserRequest(ctx context.Context, token string
 		CreatedBy:       userID,
 	}
 
-	fmt.Println("sms: ", userRequest)
-
 	err = userRequest.Insert(ctx, ur.db)
 	if err != nil {
 		return nil, err
 	}
-
-	fmt.Println("snms: ", userRequest.ID)
 
 	return userRequest.Response(), nil
 }

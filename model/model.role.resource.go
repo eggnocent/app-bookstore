@@ -90,6 +90,35 @@ func GetOneRoleResource(ctx context.Context, db *sqlx.DB, id uuid.UUID) (RoleRes
 	return roleResource, nil
 }
 
+func CheckRoleAccess(ctx context.Context, db *sqlx.DB, roleID uuid.UUID, endpoint string, method string) (bool, error) {
+	query := `
+		SELECT EXISTS (
+			SELECT 1
+			FROM role_resources rr
+			JOIN resources r ON rr.resource_id = r.id
+			WHERE rr.role_id = $1
+			AND r.endpoint = $2
+			AND rr.method = $3
+			AND rr.is_active = true
+		)
+	`
+
+	var exists bool
+	err := db.QueryRowxContext(ctx, query,
+		roleID,
+		endpoint,
+		method,
+	).Scan(
+		&exists,
+	)
+
+	if err != nil {
+		return false, err
+	}
+
+	return exists, nil
+}
+
 func (rr *RoleResourceModel) Insert(ctx context.Context, db *sqlx.DB) error {
 	query := `
 		INSERT INTO role_resources (
