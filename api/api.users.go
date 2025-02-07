@@ -39,8 +39,8 @@ type ChangePasswordParam struct {
 }
 
 type LoginResponse struct {
-	AccessToken string `json:"access_token"`
-	ExpiresAt   int64  `json:"expires_at"`
+	AccessToken string    `json:"access_token"`
+	ExpiresAt   time.Time `json:"expires_at"`
 }
 
 func (u *UserModule) List(ctx context.Context) ([]model.UserResponse, error) {
@@ -79,13 +79,11 @@ func (u *UserModule) Register(ctx context.Context, param UserParam) (interface{}
 }
 
 func (u *UserModule) Login(ctx context.Context, param UserParam) (*LoginResponse, error) {
-	// validasi user
 	user, err := model.GetUserByUsername(ctx, u.db, param.Username)
 	if err != nil {
 		return nil, errors.New("invalid username or password")
 	}
 
-	// validasi pass
 	if !lib.CheckPassword(param.Password, user.Password) {
 		return nil, errors.New("invalid password")
 	}
@@ -99,9 +97,22 @@ func (u *UserModule) Login(ctx context.Context, param UserParam) (*LoginResponse
 		return nil, errors.New("failed to generate access token")
 	}
 
+	session := model.SessionModel{
+		UserID:     user.ID,
+		Token:      token,
+		Expiration: time.Unix(expiredAt, 0),
+		CreatedAt:  time.Now(),
+		CreatedBy:  user.ID,
+	}
+
+	err = session.Insert(ctx, u.db)
+	if err != nil {
+		return nil, err
+	}
+
 	return &LoginResponse{
 		AccessToken: token,
-		ExpiresAt:   expiredAt,
+		ExpiresAt:   time.Unix(expiredAt, 0),
 	}, nil
 }
 
@@ -145,6 +156,11 @@ func (u *UserModule) ChangePassword(ctx context.Context, token string, param Cha
 func (u *UserModule) Logout(ctx context.Context, token string) error {
 	if token == "" {
 		return errors.New("token is invalid")
+	}
+
+	err := model.DeleteSessionByToken(ctx, u.db, token)
+	if err != nil {
+		return err
 	}
 	return nil
 }

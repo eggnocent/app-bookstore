@@ -34,9 +34,9 @@ func (m *Middleware) CheckAccess(next http.Handler) http.Handler {
 		start := time.Now()
 		authHeader := r.Header.Get("Authorization")
 
-		// cek token
+		// cek token di header
 		if authHeader == "" || !strings.HasPrefix(authHeader, "Bearer ") {
-			http.Error(w, lib.ErrMissingAuthHeader.Error(), http.StatusUnauthorized)
+			lib.Error(w, http.StatusUnauthorized, "Missing or invalid authorization header", nil)
 			return
 		}
 
@@ -44,46 +44,64 @@ func (m *Middleware) CheckAccess(next http.Handler) http.Handler {
 		token = strings.TrimSpace(token)
 
 		if token == "" {
-			http.Error(w, lib.ErrMissingToken.Error(), http.StatusUnauthorized)
+			lib.Error(w, http.StatusUnauthorized, "Invalid token", nil)
 			return
 		}
 
-		// verif token jwt
+		// verif token
 		claims, err := m.JWT.VerifyAccessToken(token)
 		if err != nil {
-			http.Error(w, lib.ErrInvalidToken.Error(), http.StatusUnauthorized)
+			lib.Error(w, http.StatusUnauthorized, "Invalid or expired token", err)
 			return
 		}
 
-		// ambil user id dari token
+		// cek token apa masih aktif bre
+		sessionExists, err := model.CheckSessionExists(r.Context(), m.DB, token)
+		if err != nil {
+			lib.Error(w, http.StatusInternalServerError, "Failed to check session", err)
+			return
+		}
+
+		if !sessionExists {
+			lib.Error(w, http.StatusUnauthorized, "Session has expired, please login again", fmt.Errorf("session not found"))
+			return
+		}
+
+		// ambil user_id dari token
 		userID, err := uuid.Parse(claims.UserID)
 		if err != nil {
-			http.Error(w, "invalid user ID", http.StatusUnauthorized)
+			lib.Error(w, http.StatusUnauthorized, "Invalid user ID", err)
 			return
 		}
 
-		// ambil role id dari user_roles
+		// ambil role_id dari user role
 		roleID, err := model.GetUserRoleID(r.Context(), m.DB, userID)
 		if err != nil {
-			http.Error(w, "failed to retrieve user role ID", http.StatusInternalServerError)
+			lib.Error(w, http.StatusInternalServerError, "Failed to retrieve user role ID", err)
 			return
 		}
 
-		// check akses endpoint
+		// cek role apakah memiliki akses endpoint
 		requestedEndpoint := lib.NormalizeEndpoint(r.URL.Path)
 		requestedMethod := r.Method
 
 		allowed, err := model.CheckRoleAccess(r.Context(), m.DB, roleID, requestedEndpoint, requestedMethod)
-
-		if err != nil || !allowed {
-			http.Error(w, "access denied", http.StatusForbidden)
+		if err != nil {
+			lib.Error(w, http.StatusInternalServerError, "Failed to check role access", err)
 			return
 		}
 
+		if !allowed {
+			lib.Error(w, http.StatusForbidden, "Access denied", fmt.Errorf("access denied for role %s on %s %s", roleID, requestedMethod, requestedEndpoint))
+			return
+		}
+
+		// set ccontext untuk user
 		ctx := context.WithValue(r.Context(), userKey, claims)
 		next.ServeHTTP(w, r.WithContext(ctx))
 
+		// logging debug
 		microSec := time.Since(start).Microseconds()
-		fmt.Printf("User %s accessed %s %s | Duration: %vμs\n", r.URL, microSec)
+		fmt.Printf("[DEBUG] User %s accessed %s | Method: %s | Duration: %vμs\n", userID, requestedEndpoint, requestedMethod, microSec)
 	})
 }

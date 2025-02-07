@@ -56,3 +56,27 @@ func HandlerChangePassword(w http.ResponseWriter, r *http.Request) {
 
 	lib.Success(w, "Password changed successfully", nil)
 }
+
+func HandlerLogout(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	authHeader := r.Header.Get("Authorization")
+	if authHeader == "" {
+		http.Error(w, "invalid authorization header", http.StatusBadRequest)
+		return
+	}
+
+	token := strings.TrimPrefix(authHeader, "Bearer ")
+	if token == "" {
+		http.Error(w, "invalid token", http.StatusInternalServerError)
+		return
+	}
+
+	err := userService.Logout(ctx, token)
+	if err != nil {
+		lib.Error(w, http.StatusInternalServerError, "Failed to logout", err)
+		return
+	}
+
+	lib.Success(w, "User successfully logout", nil)
+}

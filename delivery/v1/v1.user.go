@@ -12,4 +12,5 @@ func NewAPIUser(r *mux.Router) {
 	r.HandleFunc("/login", router.HandlerLogin).Methods(http.MethodPost)
 	r.HandleFunc("/change-password", router.HandlerChangePassword).Methods(http.MethodPost)
 	r.HandleFunc("/users", router.HandlerUser).Methods(http.MethodGet)
+	r.HandleFunc("/logout", router.HandlerLogout).Methods(http.MethodDelete)
 }
