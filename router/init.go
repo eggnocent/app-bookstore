@@ -15,6 +15,7 @@ var (
 	resourceService      *api.ResourceModule
 	roleResourceService  *api.RoleResourceModule
 	passwordResetService *api.PasswordResetModule
+	authorsService       *api.AuthorsModule
 )
 
 func Init(db *sqlx.DB, jwt lib.Jwt) {
@@ -25,4 +26,5 @@ func Init(db *sqlx.DB, jwt lib.Jwt) {
 	resourceService = api.NewResourceModule(db, jwt)
 	roleResourceService = api.NewRoleResourceModule(db, jwt)
 	passwordResetService = api.NewPasswordResetModule(db, jwt)
+	authorsService = api.NewUserAuthorsModule(db, jwt)
 }
