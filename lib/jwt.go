@@ -23,6 +23,13 @@ type Options struct {
 	Issuer     string
 }
 
+func NewJWT(cfg *config.Config) Jwt {
+	return &Options{
+		SigningKey: cfg.App.JwtSecretKey,
+		Issuer:     cfg.App.JwtIssuer,
+	}
+}
+
 func (o *Options) GenerateToken(data *JwtData) (string, int64, error) {
 	if data.UserID == "" {
 		return "", 0, errors.New("user id is required")
@@ -59,11 +66,4 @@ func (o *Options) VerifyAccessToken(token string) (*JwtData, error) {
 	}
 
 	return nil, errors.New("invalid or expired token")
-}
-
-func NewJWT(cfg *config.Config) Jwt {
-	return &Options{
-		SigningKey: cfg.App.JwtSecretKey,
-		Issuer:     cfg.App.JwtIssuer,
-	}
 }
