@@ -17,6 +17,7 @@ var (
 	passwordResetService *api.PasswordResetModule
 	authorsService       *api.AuthorsModule
 	publisherService     *api.PublisherModule
+	categoriesService    *api.CategoryModule
 )
 
 func Init(db *sqlx.DB, jwt lib.Jwt) {
@@ -29,4 +30,5 @@ func Init(db *sqlx.DB, jwt lib.Jwt) {
 	passwordResetService = api.NewPasswordResetModule(db, jwt)
 	authorsService = api.NewUserAuthorsModule(db, jwt)
 	publisherService = api.NewPublisherModule(db, jwt)
+	categoriesService = api.NewCategoriesModule(db, jwt)
 }

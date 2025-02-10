@@ -95,7 +95,8 @@ func startServer(cmd *cobra.Command, args []string) {
 	v1.NewAPIResource(public)
 	v1.NewAPIRoleResource(protected)
 	v1.NewAPIAuthors(protected)
-	v1.NewAPIPublisher(public)
+	v1.NewAPIPublisher(protected)
+	v1.NewAPICategories(public)
 
 	log.Info().Msgf("Server running on port %s", cfg.App.AppPort)
 	if err := http.ListenAndServe(":"+cfg.App.AppPort, r); err != nil {
