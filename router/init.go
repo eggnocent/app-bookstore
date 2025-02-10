@@ -8,12 +8,13 @@ import (
 )
 
 var (
-	userService         *api.UserModule
-	roleService         *api.RoleModule
-	userRequestService  *api.UserRequestModule
-	userRolesService    *api.UserRoleModule
-	resourceService     *api.ResourceModule
-	roleResourceService *api.RoleResourceModule
+	userService          *api.UserModule
+	roleService          *api.RoleModule
+	userRequestService   *api.UserRequestModule
+	userRolesService     *api.UserRoleModule
+	resourceService      *api.ResourceModule
+	roleResourceService  *api.RoleResourceModule
+	passwordResetService *api.PasswordResetModule
 )
 
 func Init(db *sqlx.DB, jwt lib.Jwt) {
@@ -23,4 +24,5 @@ func Init(db *sqlx.DB, jwt lib.Jwt) {
 	userRolesService = api.NewUserRolesModule(db, jwt)
 	resourceService = api.NewResourceModule(db, jwt)
 	roleResourceService = api.NewRoleResourceModule(db, jwt)
+	passwordResetService = api.NewPasswordResetModule(db, jwt)
 }

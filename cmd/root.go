@@ -84,6 +84,7 @@ func startServer(cmd *cobra.Command, args []string) {
 
 	public := r.PathPrefix("/api/v1").Subrouter()
 	v1.NewAPIUser(public)
+	v1.NewAPIResetPass(public)
 
 	protected := r.PathPrefix("/api/v1").Subrouter()
 	protected.Use(mw.CheckAccess)
