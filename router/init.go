@@ -20,6 +20,7 @@ var (
 	categoriesService    *api.CategoryModule
 	bookService          *api.BookModule
 	loanService          *api.LoansModule
+	ratingService        *api.RatingModule
 )
 
 func Init(db *sqlx.DB, jwt lib.Jwt) {
@@ -35,4 +36,5 @@ func Init(db *sqlx.DB, jwt lib.Jwt) {
 	categoriesService = api.NewCategoriesModule(db, jwt)
 	bookService = api.NewBooksModule(db, jwt)
 	loanService = api.NewLoansModule(db, jwt)
+	ratingService = api.NewRatingModule(db, jwt)
 }
