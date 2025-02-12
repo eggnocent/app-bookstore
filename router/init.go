@@ -19,6 +19,7 @@ var (
 	publisherService     *api.PublisherModule
 	categoriesService    *api.CategoryModule
 	bookService          *api.BookModule
+	loanService          *api.LoansModule
 )
 
 func Init(db *sqlx.DB, jwt lib.Jwt) {
@@ -33,4 +34,5 @@ func Init(db *sqlx.DB, jwt lib.Jwt) {
 	publisherService = api.NewPublisherModule(db, jwt)
 	categoriesService = api.NewCategoriesModule(db, jwt)
 	bookService = api.NewBooksModule(db, jwt)
+	loanService = api.NewLoansModule(db, jwt)
 }
