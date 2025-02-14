@@ -3,19 +3,49 @@ package router
 import (
 	"app-bookstore/api"
 	"app-bookstore/lib"
+	"app-bookstore/model"
 	"net/http"
+	"time"
 )
 
 func HandlerUser(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-
-	userResponse, err := userService.List(ctx)
+	res, err := lib.ParseQueryParam(ctx, r)
 	if err != nil {
-		lib.Error(w, http.StatusBadRequest, "failed to retreive user", err)
+		http.Error(w, "invalid query parameter", http.StatusBadRequest)
 		return
 	}
 
-	lib.Success(w, "success to retreive user", userResponse)
+	res.IsActive = r.URL.Query().Get("is_active") == "true"
+	startDateStr := r.URL.Query().Get("start_date")
+	endDateStr := r.URL.Query().Get("end_date")
+
+	var dateFilter model.DateFilter
+	if startDateStr != "" && endDateStr != "" {
+		startDate, err := time.Parse("2006-01-02", startDateStr)
+		if err != nil {
+			http.Error(w, "invalid start_date format, use YYYY-MM-DD", http.StatusBadRequest)
+			return
+		}
+		endDate, err := time.Parse("2006-01-02", endDateStr)
+		if err != nil {
+			http.Error(w, "invalid end_date format, use YYYY-MM-DD", http.StatusBadRequest)
+			return
+		}
+
+		dateFilter = model.DateFilter{
+			StartDate: startDate,
+			EndDate:   endDate,
+		}
+	}
+
+	userResponse, err := userService.List(ctx, res, dateFilter)
+	if err != nil {
+		lib.Error(w, http.StatusBadRequest, "failed to retrieve user", err)
+		return
+	}
+
+	lib.Success(w, "success to retrieve user", userResponse)
 }
 
 func HandlerRegisterUser(w http.ResponseWriter, r *http.Request) {

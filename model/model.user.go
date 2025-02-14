@@ -1,8 +1,10 @@
 package model
 
 import (
+	"app-bookstore/lib"
 	"context"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/google/uuid"
@@ -42,12 +44,54 @@ func (u *UserModel) Response() UserResponse {
 	}
 }
 
-func GetAllUser(ctx context.Context, db *sqlx.DB) ([]UserModel, error) {
-	query := `
-		SELECT id, username, created_at, created_by, updated_at, updated_by 
-		FROM users
-	`
-	rows, err := db.QueryxContext(ctx, query)
+type DateFilter struct {
+	StartDate time.Time `json:"start_date"`
+	EndDate   time.Time `json:"end_date"`
+}
+
+func GetAllUser(ctx context.Context, db *sqlx.DB, filter lib.Filter, statusUser string, dateFilter DateFilter) ([]UserModel, error) {
+	var filters []string
+
+	if filter.Search != "" {
+		filters = append(filters, fmt.Sprintf("u.username ILIKE '%%%s%%'", filter.Search))
+	}
+
+	if filter.RoleID != uuid.Nil {
+		filters = append(filters, fmt.Sprintf("ur.role_id = '%s'", filter.RoleID))
+	}
+
+	if statusUser != "" {
+		filters = append(filters, fmt.Sprintf("u.status = '%s'", statusUser))
+	}
+
+	if !dateFilter.StartDate.IsZero() && !dateFilter.EndDate.IsZero() {
+		filters = append(filters, fmt.Sprintf(
+			"u.created_at BETWEEN '%s' AND '%s'",
+			dateFilter.StartDate.Format("2006-01-02"),
+			dateFilter.EndDate.Format("2006-01-02"),
+		))
+	}
+
+	query := fmt.Sprintf(
+		`
+		SELECT 
+			u.id, 
+			u.username, 
+			u.created_at, 
+			u.created_by, 
+			u.updated_at, 
+			u.updated_by 
+		FROM 
+			users u
+		INNER JOIN 
+			user_roles ur 
+		ON 
+			u.id = ur.user_id
+		%s
+		ORDER BY u.created_at %s
+		LIMIT $1 OFFSET $2
+	`, lib.SearchGenerate(ctx, "AND", filters), filter.Dir)
+	rows, err := db.QueryxContext(ctx, query, filter.Limit, filter.Offset)
 	if err != nil {
 		return nil, err
 	}
