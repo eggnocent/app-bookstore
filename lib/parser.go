@@ -22,10 +22,10 @@ type Filter struct {
 	UserID     uuid.UUID `json:"user_id"`
 	RoleID     uuid.UUID `json:"role_id"`
 	CategoryID uuid.UUID `json:"category_id"`
-	IsActive   bool      `json:"is_active"`
 	IsPending  bool      `json:"is_pending"`
 	IsApprove  bool      `json:"is_approve"`
 	IsRejected bool      `json:"is_rejected"`
+	AuthorBook string    `json:"author_book"`
 }
 
 var validate *validator.Validate
@@ -93,8 +93,9 @@ func ParseQueryParam(ctx context.Context, r *http.Request) (Filter, error) {
 		filter.CategoryID = categoryID
 	}
 
-	filter.IsActive = urisVal.Get("is_active") == "true"
 	filter.IsPending = urisVal.Get("is_pending") == "true"
+	filter.IsApprove = urisVal.Get("is_approve") == "true"
+	filter.IsRejected = urisVal.Get("is_rejected") == "true"
 
 	err = validate.Struct(filter)
 	if err != nil {

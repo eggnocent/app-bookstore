@@ -31,8 +31,8 @@ type AuthorsParam struct {
 	Bio  string `json:"bio"`
 }
 
-func (a *AuthorsModule) List(ctx context.Context) ([]model.AuthorsRespose, error) {
-	authorRequest, err := model.GetAllAuthors(ctx, a.db)
+func (a *AuthorsModule) List(ctx context.Context, filter lib.Filter, dateFilter model.DateFilter) ([]model.AuthorsRespose, error) {
+	authorRequest, err := model.GetAllAuthors(ctx, a.db, filter, dateFilter)
 	if err != nil {
 		return nil, err
 	}

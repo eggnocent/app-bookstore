@@ -1,7 +1,9 @@
 package model
 
 import (
+	"app-bookstore/lib"
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/google/uuid"
@@ -41,21 +43,46 @@ func (a *AuthorsModel) Response() AuthorsRespose {
 	}
 }
 
-func GetAllAuthors(ctx context.Context, db *sqlx.DB) ([]AuthorsModel, error) {
-	query := `
-		SELECT
-			id, 
-			name, 
-			bio, 
-			created_at, 
-			created_by, 
-			updated_at, 
-			updated_by
-		FROM
-			authors
-	`
+func GetAllAuthors(ctx context.Context, db *sqlx.DB, filter lib.Filter, dateFilter DateFilter) ([]AuthorsModel, error) {
+	var filters []string
 
-	rows, err := db.QueryxContext(ctx, query)
+	if filter.Search != "" {
+		filters = append(filters, fmt.Sprintf("a.name ILIKE '%%%s%%'", filter.Search))
+	}
+
+	if filter.AuthorBook != "" {
+		filters = append(filters, fmt.Sprintf("b.title ILIKE '%%%s%%'", filter.AuthorBook))
+	}
+
+	if !dateFilter.StartDate.IsZero() && !dateFilter.EndDate.IsZero() {
+		filters = append(filters, fmt.Sprintf(
+			"a.created_at BETWEEN '%s' AND '%s'",
+			dateFilter.StartDate.Format("2006-01-02"),
+			dateFilter.EndDate.Format("2006-01-02"),
+		))
+	}
+	query := fmt.Sprintf(
+		`
+		SELECT
+			a.id, 
+			a.name, 
+			a.bio, 
+			a.created_at, 
+			a.created_by, 
+			a.updated_at, 
+			a.updated_by
+		FROM
+			authors a
+		INNER JOIN
+			books b
+		ON
+			a.id = b.author_id
+		%s
+		ORDER BY a.created_at %s
+		LIMIT $1 OFFSET $2
+	`, lib.SearchGenerate(ctx, "AND", filters), filter.Dir)
+
+	rows, err := db.QueryxContext(ctx, query, filter.Limit, filter.Offset)
 	if err != nil {
 		return nil, err
 	}
