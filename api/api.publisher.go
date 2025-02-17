@@ -32,8 +32,8 @@ type PublisherParam struct {
 	Phone   string `json:"phone"`
 }
 
-func (p *PublisherModule) List(ctx context.Context) ([]model.PublisherResponse, error) {
-	publiserRequest, err := model.GetAllPublisher(ctx, p.db)
+func (p *PublisherModule) List(ctx context.Context, filter lib.Filter, dateFilter model.DateFilter) ([]model.PublisherResponse, error) {
+	publiserRequest, err := model.GetAllPublisher(ctx, p.db, filter, dateFilter)
 	if err != nil {
 		return nil, err
 	}

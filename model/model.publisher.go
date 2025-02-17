@@ -1,7 +1,9 @@
 package model
 
 import (
+	"app-bookstore/lib"
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/google/uuid"
@@ -44,8 +46,22 @@ func (p *PublisherModel) Response() PublisherResponse {
 	}
 }
 
-func GetAllPublisher(ctx context.Context, db *sqlx.DB) ([]PublisherModel, error) {
-	query := `
+func GetAllPublisher(ctx context.Context, db *sqlx.DB, filter lib.Filter, dateFilter DateFilter) ([]PublisherModel, error) {
+	var filters []string
+	if filter.Search != "" {
+		filters = append(filters, fmt.Sprintf("name ILIKE '%%%s%%'", filter.Search))
+	}
+
+	if !dateFilter.StartDate.IsZero() && !dateFilter.EndDate.IsZero() {
+		filters = append(filters, fmt.Sprintf(
+			"created_at BETWEEN '%s' AND '%s'",
+			dateFilter.StartDate.Format("2006-01-02"),
+			dateFilter.EndDate.Format("2006-01-02"),
+		))
+	}
+
+	query := fmt.Sprintf(
+		`
 		SELECT
 			id, 
 			name, 
@@ -56,10 +72,13 @@ func GetAllPublisher(ctx context.Context, db *sqlx.DB) ([]PublisherModel, error)
 			updated_at, 
 			updated_by
 		FROM
-			publishers
-	`
+			publishers 
+		%s
+		ORDER BY created_at %s
+		LIMIT $1 OFFSET $2
+	`, lib.SearchGenerate(ctx, "AND", filters), filter.Dir)
 
-	rows, err := db.QueryxContext(ctx, query)
+	rows, err := db.QueryxContext(ctx, query, filter.Limit, filter.Offset)
 	if err != nil {
 		return nil, err
 	}
