@@ -10,9 +10,9 @@ var SystemID = uuid.MustParse("c9c5f350-c0b2-4f09-bb9e-c1d134a371b1")
 
 var (
 	Active   = "ACTIVE"
-	Pending  = "PENDING"
-	Approve  = "APPROVED"
-	Reject   = "REJECTED"
+	Pending  = "pending"
+	Approve  = "approved"
+	Reject   = "rejected"
 	Inactive = "INACTIVE"
 	Asc      = "ASC"
 	Desc     = "DESC"

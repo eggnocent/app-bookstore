@@ -43,8 +43,8 @@ type LoginResponse struct {
 	ExpiresAt   time.Time `json:"expires_at"`
 }
 
-func (u *UserModule) List(ctx context.Context, param lib.Filter, dateFilter model.DateFilter) ([]model.UserResponse, error) {
-	users, err := model.GetAllUser(ctx, u.db, param, "", dateFilter)
+func (u *UserModule) List(ctx context.Context, filter lib.Filter, dateFilter model.DateFilter) ([]model.UserResponse, error) {
+	users, err := model.GetAllUser(ctx, u.db, filter, dateFilter)
 	if err != nil {
 		return nil, err
 	}

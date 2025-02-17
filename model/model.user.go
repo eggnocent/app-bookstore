@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -49,8 +50,9 @@ type DateFilter struct {
 	EndDate   time.Time `json:"end_date"`
 }
 
-func GetAllUser(ctx context.Context, db *sqlx.DB, filter lib.Filter, statusUser string, dateFilter DateFilter) ([]UserModel, error) {
+func GetAllUser(ctx context.Context, db *sqlx.DB, filter lib.Filter, dateFilter DateFilter) ([]UserModel, error) {
 	var filters []string
+	var statuses []string
 
 	if filter.Search != "" {
 		filters = append(filters, fmt.Sprintf("u.username ILIKE '%%%s%%'", filter.Search))
@@ -60,8 +62,25 @@ func GetAllUser(ctx context.Context, db *sqlx.DB, filter lib.Filter, statusUser 
 		filters = append(filters, fmt.Sprintf("ur.role_id = '%s'", filter.RoleID))
 	}
 
-	if statusUser != "" {
-		filters = append(filters, fmt.Sprintf("u.status = '%s'", statusUser))
+	if filter.IsPending {
+		statuses = append(statuses, lib.Pending)
+	}
+
+	if filter.IsApprove {
+		statuses = append(statuses, lib.Approve)
+	}
+
+	if filter.IsRejected {
+		statuses = append(statuses, lib.Reject)
+	}
+
+	if len(statuses) > 0 {
+		placeHOlders := make([]string, len(statuses))
+		for i, status := range statuses {
+			placeHOlders[i] = fmt.Sprintf("'%s'", status)
+		}
+
+		filters = append(filters, fmt.Sprintf("ur.status IN (%s)", strings.Join(placeHOlders, ", ")))
 	}
 
 	if !dateFilter.StartDate.IsZero() && !dateFilter.EndDate.IsZero() {
@@ -84,7 +103,7 @@ func GetAllUser(ctx context.Context, db *sqlx.DB, filter lib.Filter, statusUser 
 		FROM 
 			users u
 		INNER JOIN 
-			user_roles ur 
+			user_requests ur 
 		ON 
 			u.id = ur.user_id
 		%s

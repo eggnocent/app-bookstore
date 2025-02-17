@@ -16,7 +16,6 @@ func HandlerUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	res.IsActive = r.URL.Query().Get("is_active") == "true"
 	startDateStr := r.URL.Query().Get("start_date")
 	endDateStr := r.URL.Query().Get("end_date")
 
