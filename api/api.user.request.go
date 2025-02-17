@@ -80,7 +80,7 @@ func (ur *UserRequestModule) CreateUserRequest(ctx context.Context, token string
 
 	userRequest := model.UserRequestModel{
 		ID:              uuid.New(),
-		UserID:          userID,
+		UserID:          param.UserID,
 		RequestUserRole: param.RequestRoleID,
 		Status:          "pending",
 		CreatedAt:       time.Now(),
