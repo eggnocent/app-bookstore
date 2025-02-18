@@ -37,8 +37,8 @@ type BookParam struct {
 	AccessLevel   string `json:"access_level"`
 }
 
-func (b *BookModule) List(ctx context.Context) ([]model.BookResponse, error) {
-	bookRequest, err := model.GetAllBooks(ctx, b.db)
+func (b *BookModule) List(ctx context.Context, filter lib.Filter, dateFilter model.DateFilter) ([]model.BookResponse, error) {
+	bookRequest, err := model.GetAllBooks(ctx, b.db, filter, dateFilter)
 	if err != nil {
 		return nil, err
 	}

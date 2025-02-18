@@ -15,17 +15,27 @@ import (
 )
 
 type Filter struct {
-	Limit      int       `json:"limit" validate:"lte=100"`
-	Offset     int       `json:"offset"`
-	Dir        string    `json:"dir"`
-	Search     string    `json:"search" validate:"omitempty,alphanum_space"`
-	UserID     uuid.UUID `json:"user_id"`
-	RoleID     uuid.UUID `json:"role_id"`
-	CategoryID uuid.UUID `json:"category_id"`
-	IsPending  bool      `json:"is_pending"`
-	IsApprove  bool      `json:"is_approve"`
-	IsRejected bool      `json:"is_rejected"`
-	AuthorBook string    `json:"author_book"`
+	Limit         int       `json:"limit" validate:"lte=100"`
+	Offset        int       `json:"offset"`
+	Dir           string    `json:"dir"`
+	Search        string    `json:"search" validate:"omitempty,alphanum_space"`
+	UserID        uuid.UUID `json:"user_id"`
+	RoleID        uuid.UUID `json:"role_id"`
+	CategoryID    uuid.UUID `json:"category_id"`
+	IsPending     bool      `json:"is_pending"`
+	IsApprove     bool      `json:"is_approve"`
+	IsRejected    bool      `json:"is_rejected"`
+	AuthorBook    string    `json:"author_book"`
+	PublisherID   uuid.UUID `json:"publisher_id"`
+	AuthorID      uuid.UUID `json:"author_id"`
+	PublishedYear int       `json:"published_year"`
+	Status        string    `json:"status"`
+	AccessLevel   string    `json:"access_level"`
+	Available     bool      `json:"available"`
+	Borrowed      bool      `json:"borrowed"`
+	Public        bool      `json:"public"`
+	MemberOnly    bool      `json:"member_only"`
+	AdminOnly     bool      `json:"admin_only"`
 }
 
 var validate *validator.Validate
@@ -93,9 +103,38 @@ func ParseQueryParam(ctx context.Context, r *http.Request) (Filter, error) {
 		filter.CategoryID = categoryID
 	}
 
+	if publisherIDs := urisVal.Get("publisher_id"); publisherIDs != "" {
+		publisherID, err := uuid.Parse(publisherIDs)
+		if err != nil {
+			return Filter{}, errors.New("invalid request")
+		}
+		filter.PublisherID = publisherID
+	}
+
+	if authorIDs := urisVal.Get("author_id"); authorIDs != "" {
+		authorID, err := uuid.Parse(authorIDs)
+		if err != nil {
+			return Filter{}, errors.New("invalid request")
+		}
+		filter.AuthorID = authorID
+	}
+
+	if publishedYear := urisVal.Get("published_year"); publishedYear != "" {
+		publishedYearInt, err := strconv.Atoi(publishedYear)
+		if err != nil {
+			return Filter{}, errors.New("invalid published_year")
+		}
+		filter.PublishedYear = publishedYearInt
+	}
+
 	filter.IsPending = urisVal.Get("is_pending") == "true"
 	filter.IsApprove = urisVal.Get("is_approve") == "true"
 	filter.IsRejected = urisVal.Get("is_rejected") == "true"
+	filter.Available = urisVal.Get("is_available") == "true"
+	filter.Borrowed = urisVal.Get("is_borrowed") == "true"
+	filter.Public = urisVal.Get("is_public") == "true"
+	filter.MemberOnly = urisVal.Get("is_member_only") == "true"
+	filter.AdminOnly = urisVal.Get("is_admin_only") == "true"
 
 	err = validate.Struct(filter)
 	if err != nil {
