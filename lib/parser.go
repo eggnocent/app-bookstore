@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"io"
+	"log"
 	"net/http"
 	"regexp"
 	"strconv"
@@ -36,6 +37,9 @@ type Filter struct {
 	Public        bool      `json:"public"`
 	MemberOnly    bool      `json:"member_only"`
 	AdminOnly     bool      `json:"admin_only"`
+	MemberID      uuid.UUID `json:"member_id"`
+	Returned      bool      `json:"returned"`
+	BookID        uuid.UUID `json:"book_id"`
 }
 
 var validate *validator.Validate
@@ -119,6 +123,16 @@ func ParseQueryParam(ctx context.Context, r *http.Request) (Filter, error) {
 		filter.AuthorID = authorID
 	}
 
+	if memberID := urisVal.Get("member_id"); memberID != "" {
+		memberID, err := uuid.Parse(memberID)
+		if err != nil {
+			return Filter{}, errors.New("invalid request")
+		}
+		filter.MemberID = memberID
+	}
+
+	log.Println(filter.MemberID)
+
 	if publishedYear := urisVal.Get("published_year"); publishedYear != "" {
 		publishedYearInt, err := strconv.Atoi(publishedYear)
 		if err != nil {
@@ -127,11 +141,20 @@ func ParseQueryParam(ctx context.Context, r *http.Request) (Filter, error) {
 		filter.PublishedYear = publishedYearInt
 	}
 
+	if booksID := urisVal.Get("book_id"); booksID != "" {
+		bookID, err := uuid.Parse(booksID)
+		if err != nil {
+			return Filter{}, errors.New("invalid request")
+		}
+		filter.BookID = bookID
+	}
+
 	filter.IsPending = urisVal.Get("is_pending") == "true"
 	filter.IsApprove = urisVal.Get("is_approve") == "true"
 	filter.IsRejected = urisVal.Get("is_rejected") == "true"
 	filter.Available = urisVal.Get("is_available") == "true"
 	filter.Borrowed = urisVal.Get("is_borrowed") == "true"
+	filter.Returned = urisVal.Get("is_returned") == "true"
 	filter.Public = urisVal.Get("is_public") == "true"
 	filter.MemberOnly = urisVal.Get("is_member_only") == "true"
 	filter.AdminOnly = urisVal.Get("is_admin_only") == "true"

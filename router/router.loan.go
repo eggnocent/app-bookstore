@@ -3,8 +3,10 @@ package router
 import (
 	"app-bookstore/api"
 	"app-bookstore/lib"
+	"app-bookstore/model"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
@@ -12,8 +14,35 @@ import (
 
 func HandlerListLoan(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
+	res, err := lib.ParseQueryParam(ctx, r)
+	if err != nil {
+		http.Error(w, "invalid query parameter", http.StatusBadRequest)
+		return
+	}
 
-	loanResponse, err := loanService.List(ctx)
+	startDateStr := r.URL.Query().Get("start_date")
+	endDateStr := r.URL.Query().Get("end_date")
+
+	var dateFilter model.DateFilter
+	if startDateStr != "" && endDateStr != "" {
+		startDate, err := time.Parse("2006-01-02", startDateStr)
+		if err != nil {
+			http.Error(w, "invalid start_date format, use YYYY-MM-DD", http.StatusBadRequest)
+			return
+		}
+		endDate, err := time.Parse("2006-01-02", endDateStr)
+		if err != nil {
+			http.Error(w, "invalid end_date format, use YYYY-MM-DD", http.StatusBadRequest)
+			return
+		}
+
+		dateFilter = model.DateFilter{
+			StartDate: startDate,
+			EndDate:   endDate,
+		}
+	}
+
+	loanResponse, err := loanService.List(ctx, res, dateFilter)
 	if err != nil {
 		lib.Error(w, http.StatusInternalServerError, "failed to retrieve loan list", err)
 		return

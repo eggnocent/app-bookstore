@@ -1,12 +1,16 @@
 package model
 
 import (
+	"app-bookstore/lib"
 	"context"
+	"fmt"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
 	"github.com/lib/pq"
+	"github.com/rs/zerolog/log"
 )
 
 type LoansModel struct {
@@ -50,15 +54,78 @@ func (l *LoansModel) Response() LoansResponse {
 	}
 }
 
-func GetAllLoans(ctx context.Context, db *sqlx.DB) ([]LoansModel, error) {
-	query := `
-		SELECT 
-			id, book_id, member_id, loan_date, return_date, status, created_at, created_by, updated_at, updated_by
-		FROM
-			loans
-	`
+func GetAllLoans(ctx context.Context, db *sqlx.DB, filter lib.Filter, dateFilter DateFilter) ([]LoansModel, error) {
+	var filters []string
+	var statuses []string
 
-	rows, err := db.QueryxContext(ctx, query)
+	if filter.Search != "" {
+		filters = append(filters, fmt.Sprintf("b.title ILIKE '%%%s%%'", filter.Search))
+	}
+
+	if filter.BookID != uuid.Nil {
+		filters = append(filters, fmt.Sprintf("l.book_id = '%s'", filter.BookID))
+	}
+
+	if filter.MemberID != uuid.Nil {
+		filters = append(filters, fmt.Sprintf("l.member_id = '%s'", filter.MemberID))
+	}
+
+	log.Logger.Println(filter.MemberID)
+
+	if filter.Borrowed {
+		statuses = append(statuses, lib.Borrowed)
+	}
+
+	if filter.Returned {
+		statuses = append(statuses, lib.Returned)
+	}
+
+	if len(statuses) > 0 {
+		placeHOlders := make([]string, len(statuses))
+		for i, status := range statuses {
+			placeHOlders[i] = fmt.Sprintf("'%s'", status)
+		}
+
+		filters = append(filters, fmt.Sprintf("l.status IN (%s)", strings.Join(placeHOlders, ", ")))
+	}
+
+	if !dateFilter.StartDate.IsZero() && !dateFilter.EndDate.IsZero() {
+		filters = append(filters, fmt.Sprintf(
+			"l.loan_date BETWEEN '%s' AND '%s'",
+			dateFilter.StartDate.Format("2006-01-02"),
+			dateFilter.EndDate.Format("2006-01-02"),
+		))
+	}
+
+	query := fmt.Sprintf(
+		`
+		SELECT 
+			l.id, 
+			l.book_id, 
+			l.member_id, 
+			l.loan_date, 
+			l.return_date, 
+			l.status, 
+			l.created_at, 
+			l.created_by, 
+			l.updated_at, 
+			l.updated_by
+		FROM
+			loans l
+		INNER JOIN
+			books b
+		ON
+			b.id = l.book_id
+		INNER JOIN
+			user_roles ur
+		ON
+			ur.user_id = l.member_id
+		%s 
+		ORDER BY l.created_at %s
+		LIMIT $1 OFFSET $2
+	`, lib.SearchGenerate(ctx, "AND", filters), filter.Dir)
+
+	rows, err := db.QueryxContext(ctx, query, filter.Limit, filter.Offset)
 	if err != nil {
 		return nil, err
 	}

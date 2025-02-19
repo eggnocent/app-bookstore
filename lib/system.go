@@ -19,6 +19,7 @@ var (
 	Public     = "public"
 	MemberOnly = "member_only"
 	AdminOnly  = "admin_only"
+	Returned   = "returned"
 	Asc        = "ASC"
 	Desc       = "DESC"
 
@@ -33,6 +34,7 @@ var (
 		"PUBLIC":      Public,
 		"MEMBER_ONLY": MemberOnly,
 		"ADMIN_ONLY":  AdminOnly,
+		"RETURNED":    Returned,
 	}
 
 	DirMap = map[string]string{

@@ -38,8 +38,8 @@ type ReturnParam struct {
 	Status string `json:"status"`
 }
 
-func (l *LoansModule) List(ctx context.Context) ([]model.LoansResponse, error) {
-	loanResponse, err := model.GetAllLoans(ctx, l.db)
+func (l *LoansModule) List(ctx context.Context, filter lib.Filter, dateFilter model.DateFilter) ([]model.LoansResponse, error) {
+	loanResponse, err := model.GetAllLoans(ctx, l.db, filter, dateFilter)
 	if err != nil {
 		return nil, err
 	}
