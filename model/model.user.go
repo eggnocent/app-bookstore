@@ -102,7 +102,7 @@ func GetAllUser(ctx context.Context, db *sqlx.DB, filter lib.Filter, dateFilter 
 			u.updated_by 
 		FROM 
 			users u
-		INNER JOIN 
+		LEFT JOIN 
 			user_requests ur 
 		ON 
 			u.id = ur.user_id
