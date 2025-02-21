@@ -75,6 +75,24 @@ func (u *UserModule) Register(ctx context.Context, param UserParam) (interface{}
 		return nil, err
 	}
 
+	guestRoleID, err := model.GetGuestRoleID(ctx, u.db)
+	if err != nil {
+		return nil, err
+	}
+
+	userRole := &model.UserRoleModel{
+		ID:        uuid.New(),
+		UserID:    user.ID,
+		RoleID:    guestRoleID,
+		CreatedAt: time.Now(),
+		CreatedBy: lib.SystemID,
+	}
+
+	err = userRole.AssignGuestRoles(ctx, u.db)
+	if err != nil {
+		return nil, err
+	}
+
 	return user.Response(), nil
 }
 

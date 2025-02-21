@@ -164,3 +164,54 @@ func (uro *UserRoleModel) Update(ctx context.Context, db *sqlx.DB) error {
 
 	return nil
 }
+
+func GetGuestRoleID(ctx context.Context, db *sqlx.DB) (uuid.UUID, error) {
+	var roleID uuid.UUID
+	query := `
+		SELECT
+			id
+		FROM
+			roles
+		WHERE
+			identifier = 'guest'
+		LIMIT 1
+	`
+
+	err := db.QueryRowxContext(ctx, query).Scan(&roleID)
+	if err != nil {
+		return uuid.Nil, err
+	}
+
+	return roleID, nil
+}
+
+func (uro *UserRoleModel) AssignGuestRoles(ctx context.Context, db *sqlx.DB) error {
+	query := `
+		INSERT INTO user_roles(
+			id, 
+			user_id,
+			role_id,
+			created_at,
+			created_by
+		) VALUES (
+			$1, $2, $3, $4, $5 
+		) RETURNING id, created_at
+	`
+
+	err := db.QueryRowxContext(ctx, query,
+		uro.ID,
+		uro.UserID,
+		uro.RoleID,
+		uro.CreatedAt,
+		uro.CreatedBy,
+	).Scan(
+		&uro.ID,
+		&uro.CreatedAt,
+	)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
